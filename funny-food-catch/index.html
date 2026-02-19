@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎈 Funny Food Catch - Kids Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 50%, #90EE90 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+        
+        .ui-overlay.hidden {
+            display: none;
+        }
+        
+        .title {
+            font-size: 4rem;
+            text-align: center;
+            animation: bounce 1s infinite;
+            text-shadow: 3px 3px 0 #FF6B6B, -3px -3px 0 #4ECDC4;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+        }
+        
+        .instructions {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .instructions h2 {
+            color: #FF6B6B;
+            margin-bottom: 15px;
+            font-size: 2rem;
+        }
+        
+        .instructions p {
+            font-size: 1.3rem;
+            color: #555;
+            margin: 10px 0;
+        }
+        
+        .emoji-big {
+            font-size: 3rem;
+            margin: 0 10px;
+        }
+        
+        .start-btn {
+            font-size: 2rem;
+            padding: 20px 50px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #FF6B6B, #FFE66D);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255,107,107,0.4);
+            transition: all 0.3s;
+            font-family: inherit;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(255,107,107,0.6);
+        }
+        
+        .score-board {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 50;
+            display: flex;
+            gap: 30px;
+        }
+        
+        .score-board.hidden {
+            display: none;
+        }
+        
+        .lives {
+            color: #FF6B6B;
+        }
+        
+        .score {
+            color: #4ECDC4;
+        }
+        
+        .combo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: bold;
+            color: #FFE66D;
+            text-shadow: 3px 3px 0 #FF6B6B;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.5s;
+            z-index: 60;
+        }
+        
+        .combo.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+        
+        .game-over {
+            text-align: center;
+        }
+        
+        .game-over h2 {
+            font-size: 3rem;
+            color: #FF6B6B;
+            margin-bottom: 20px;
+        }
+        
+        .final-score {
+            font-size: 2rem;
+            color: #4ECDC4;
+            margin-bottom: 20px;
+        }
+        
+        .high-score {
+            font-size: 1.5rem;
+            color: #FFE66D;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .title { font-size: 2.5rem; }
+            .instructions { padding: 20px; margin: 10px; }
+            .instructions h2 { font-size: 1.5rem; }
+            .instructions p { font-size: 1rem; }
+            .start-btn { font-size: 1.5rem; padding: 15px 40px; }
+            .score-board { font-size: 1.2rem; padding: 10px 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen" class="ui-overlay">
+        <h1 class="title">🎈 Funny Food Catch! 🎈</h1>
+        <div class="instructions">
+            <h2>How to Play:</h2>
+            <p>Move your basket with <strong>mouse</strong> or <strong>touch</strong>!</p>
+            <p><span class="emoji-big">🍕</span> Catch yummy foods!</p>
+            <p><span class="emoji-big">💩</span> Avoid the stinky ones!</p>
+            <p><span class="emoji-big">⭐</span> Stars give bonus points!</p>
+            <p>🎯 You have 3 lives - don't miss the good food!</p>
+        </div>
+        <button class="start-btn" onclick="startGame()">🎮 START PLAYING! 🎮</button>
+    </div>
+    
+    <div id="gameOverScreen" class="ui-overlay hidden">
+        <div class="game-over">
+            <h2>🎉 Game Over! 🎉</h2>
+            <div class="final-score">Your Score: <span id="finalScore">0</span></div>
+            <div class="high-score">🏆 High Score: <span id="highScore">0</span></div>
+            <button class="start-btn" onclick="restartGame()">🔄 PLAY AGAIN! 🔄</button>
+        </div>
+    </div>
+    
+    <div id="scoreBoard" class="score-board hidden">
+        <span class="lives">❤️ <span id="lives">3</span></span>
+        <span class="score">⭐ <span id="score">0</span></span>
+    </div>
+    
+    <div id="comboText" class="combo"></div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameState = 'start'; // start, playing, gameover
+        let score = 0;
+        let lives = 3;
+        let combo = 0;
+        let highScore = localStorage.getItem('funnyFoodHighScore') || 0;
+        let gameSpeed = 1;
+        let frameCount = 0;
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth - 20, 800);
+            canvas.height = Math.min(window.innerHeight - 20, 600);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Player basket
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 80,
+            width: 100,
+            height: 60,
+            emoji: '🧺',
+            targetX: canvas.width / 2
+        };
+        
+        // Food types
+        const goodFoods = ['🍕', '🍔', '🍦', '🍩', '🍪', '🍰', '🧁', '🥞', '🌮', '🍟', '🍇', '🍓', '🥨', '🥐'];
+        const badFoods = ['💩', '🤢', '🦠', '🗑️', '💀'];
+        const specialItems = ['⭐', '🌈', '💎', '🎁'];
+        
+        // Falling items
+        let items = [];
+        let particles = [];
+        
+        // Create falling item
+        function createItem() {
+            const rand = Math.random();
+            let type, emoji, points, speed;
+            
+            if (rand < 0.7) {
+                // Good food (70%)
+                type = 'good';
+                emoji = goodFoods[Math.floor(Math.random() * goodFoods.length)];
+                points = 10;
+                speed = 2 + Math.random() * 2 + gameSpeed;
+            } else if (rand < 0.9) {
+                // Bad food (20%)
+                type = 'bad';
+                emoji = badFoods[Math.floor(Math.random() * badFoods.length)];
+                points = -20;
+                speed = 3 + Math.random() * 2 + gameSpeed;
+            } else {
+                // Special item (10%)
+                type = 'special';
+                emoji = specialItems[Math.floor(Math.random() * specialItems.length)];
+                points = 50;
+                speed = 4 + gameSpeed;
+            }
+            
+            items.push({
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: -50,
+                emoji: emoji,
+                type: type,
+                points: points,
+                speed: speed,
+                rotation: 0,
+                rotationSpeed: (Math.random() - 0.5) * 0.1,
+                size: 30 + Math.random() * 20
+            });
+        }
+        
+        // Create particles
+        function createParticles(x, y, emoji, color) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10 - 5,
+                    emoji: emoji,
+                    life: 30,
+                    color: color
+                });
+            }
+        }
+        
+        // Show combo text
+        function showCombo(text) {
+            const comboEl = document.getElementById('comboText');
+            comboEl.textContent = text;
+            comboEl.classList.add('show');
+            setTimeout(() => comboEl.classList.remove('show'), 1000);
+        }
+        
+        // Update game
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            frameCount++;
+            
+            // Spawn items
+            if (frameCount % Math.max(30, 60 - Math.floor(score / 100)) === 0) {
+                createItem();
+            }
+            
+            // Update player position (smooth follow)
+            player.x += (player.targetX - player.x) * 0.2;
+            
+            // Keep player in bounds
+            player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
+            
+            // Update items
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                item.y += item.speed;
+                item.rotation += item.rotationSpeed;
+                
+                // Check collision with player
+                const dx = item.x - player.x;
+                const dy = item.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < player.width/2 + item.size/2) {
+                    // Caught!
+                    score += item.points;
+                    
+                    if (item.type === 'good') {
+                        combo++;
+                        createParticles(item.x, item.y, '✨', '#FFE66D');
+                        
+                        // Combo bonuses
+                        if (combo >= 5) {
+                            score += 25;
+                            showCombo('🔥 COMBO x' + combo + '! +25');
+                        } else if (combo >= 3) {
+                            score += 10;
+                            showCombo('⚡ Great! +' + item.points);
+                        }
+                    } else if (item.type === 'bad') {
+                        combo = 0;
+                        lives--;
+                        createParticles(item.x, item.y, '💥', '#FF6B6B');
+                        showCombo('💩 Oh no! -20');
+                        
+                        if (lives <= 0) {
+                            endGame();
+                        }
+                    } else {
+                        combo++;
+                        score += item.points;
+                        createParticles(item.x, item.y, '🌟', '#4ECDC4');
+                        showCombo('🌟 AMAZING! +50');
+                    }
+                    
+                    items.splice(i, 1);
+                    continue;
+                }
+                
+                // Check if item fell off screen
+                if (item.y > canvas.height + 50) {
+                    if (item.type === 'good') {
+                        combo = 0;
+                        lives--;
+                        showCombo('💔 Missed!');
+                        
+                        if (lives <= 0) {
+                            endGame();
+                        }
+                    }
+                    items.splice(i, 1);
+                }
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.5; // gravity
+                p.life--;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Increase difficulty
+            gameSpeed = 1 + score / 500;
+            
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
+        
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background decorations
+            ctx.font = '30px Arial';
+            ctx.globalAlpha = 0.1;
+            for (let i = 0; i < 5; i++) {
+                ctx.fillText('☁️', i * 150 + 50, 100 + Math.sin(frameCount * 0.02 + i) * 20);
+            }
+            ctx.globalAlpha = 1;
+            
+            // Draw items
+            items.forEach(item => {
+                ctx.save();
+                ctx.translate(item.x, item.y);
+                ctx.rotate(item.rotation);
+                ctx.font = item.size + 'px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.emoji, 0, 0);
+                ctx.restore();
+            });
+            
+            // Draw particles
+            particles.forEach(p => {
+                ctx.font = '20px Arial';
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillText(p.emoji, p.x, p.y);
+            });
+            ctx.globalAlpha = 1;
+            
+            // Draw player
+            ctx.font = player.width + 'px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Basket bounce animation
+            const bounce = Math.sin(frameCount * 0.1) * 5;
+            ctx.fillText(player.emoji, player.x, player.y + bounce);
+            
+            // Draw player shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(player.x, player.y + 40, 40, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start game
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('scoreBoard').classList.remove('hidden');
+            
+            gameState = 'playing';
+            score = 0;
+            lives = 3;
+            combo = 0;
+            gameSpeed = 1;
+            items = [];
+            particles = [];
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
+        
+        // End game
+        function endGame() {
+            gameState = 'gameover';
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('funnyFoodHighScore', highScore);
+            }
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('highScore').textContent = highScore;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            document.getElementById('scoreBoard').classList.add('hidden');
+        }
+        
+        // Restart game
+        function restartGame() {
+            startGame();
+        }
+        
+        // Mouse/Touch controls
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.targetX = e.clientX - rect.left;
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            player.targetX = e.touches[0].clientX - rect.left;
+        }, { passive: false });
+        
+        canvas.addEventListener('touchstart', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.targetX = e.touches[0].clientX - rect.left;
+        }, { passive: true });
+        
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+</html>

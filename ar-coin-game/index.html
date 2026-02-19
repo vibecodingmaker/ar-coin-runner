@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Coin Runner</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        
+        #ui-layer {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #ffd700;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #ffd700;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+        
+        .hud .label {
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .hud .score {
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+        
+        .level-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #00d4ff;
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 2px solid #00d4ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        #start-screen, #congratulations-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            pointer-events: auto;
+        }
+        
+        #congratulations-screen {
+            display: none;
+            background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+        }
+        
+        .title {
+            font-size: 48px;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            border: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            pointer-events: auto;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255,215,0,0.5);
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        .coin-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .coin-type {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        .coin-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .coin-icon.regular { background: #ffd700; }
+        .coin-icon.golden { background: linear-gradient(135deg, #ffed4e, #ffd700); width: 25px; height: 25px; }
+        .coin-icon.diamond { background: linear-gradient(135deg, #00d4ff, #0099cc); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+        
+        .celebration {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .progress-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <div class="title">🪙 AR Coin Runner</div>
+        <div class="subtitle">Collect coins in augmented reality!</div>
+        <button class="btn" onclick="startGame()">▶ START GAME</button>
+        <div class="instructions">
+            <p>📱 Point your camera at the ground/floor</p>
+            <p>🚶 Walk around to collect coins</p>
+            <p>⭐ Reach 100 coins to advance to next level!</p>
+        </div>
+        <div class="coin-legend">
+            <div class="coin-type">
+                <div class="coin-icon regular"></div>
+                <span>Coin (1 pt)</span>
+            </div>
+            <div class="coin-type">
+                <div class="coin-icon golden"></div>
+                <span>Gold (5 pts)</span>
+            </div>
+            <div class="coin-type">
+                <div class="coin-icon diamond"></div>
+                <span>Diamond (10 pts)</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Congratulations Screen -->
+    <div id="congratulations-screen">
+        <div class="celebration">🎉</div>
+        <div class="title">LEVEL COMPLETE!</div>
+        <div class="subtitle">You collected 100 coins!</div>
+        <div id="level-score" style="font-size: 36px; color: #ffd700; margin-bottom: 30px;"></div>
+        <button class="btn" onclick="nextLevel()">➡ NEXT LEVEL</button>
+    </div>
+    
+    <!-- HUD -->
+    <div id="ui-layer">
+        <div class="hud">
+            <div class="label">Coins</div>
+            <div class="score" id="score">0</div>
+        </div>
+        <div class="level-indicator">
+            Level <span id="level">1</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+    </div>
+    
+    <!-- AR Scene -->
+    <a-scene 
+        id="ar-scene"
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        vr-mode-ui="enabled: false"
+        style="display: none;">
+        
+        <!-- Camera -->
+        <a-entity camera>
+            <a-cursor
+                id="cursor"
+                raycaster="objects: .collectible"
+                fuse="false"
+                scale="0.1 0.1 0.1"
+                visible="false">
+            </a-cursor>
+        </a-entity>
+        
+        <!-- Lighting -->
+        <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light>
+        <a-light type="directional" color="#ffffff" intensity="0.8" position="0 10 0"></a-light>
+        
+        <!-- Ground plane for reference -->
+        <a-plane 
+            id="ground"
+            rotation="-90 0 0" 
+            width="100" 
+            height="100"
+            color="#2a2a2a"
+            opacity="0.3"
+            visible="false">
+        </a-plane>
+        
+        <!-- Coins container -->
+        <a-entity id="coins-container"></a-entity>
+        
+        <!-- Particle effects container -->
+        <a-entity id="particles-container"></a-entity>
+        
+    </a-scene>
+
+    <script>
+        // Game State
+        let score = 0;
+        let level = 1;
+        let gameActive = false;
+        let coins = [];
+        let collectedCoins = new Set();
+        
+        const TARGET_SCORE = 100;
+        const COIN_SPAWN_RADIUS = 5;
+        const MAX_COINS = 20;
+        
+        // Coin configurations
+        const COIN_TYPES = {
+            regular: { value: 1, color: '#FFD700', scale: '0.3 0.3 0.3', chance: 0.7 },
+            golden: { value: 5, color: '#FFA500', scale: '0.5 0.5 0.5', chance: 0.2 },
+            diamond: { value: 10, color: '#00D4FF', scale: '0.4 0.4 0.4', chance: 0.1 }
+        };
+        
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('ar-scene').style.display = 'block';
+            
+            // Request camera permission and start AR
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(() => {
+                        gameActive = true;
+                        initializeGame();
+                    })
+                    .catch(err => {
+                        alert('Camera access required for AR game. Please allow camera access.');
+                        console.error('Camera error:', err);
+                    });
+            } else {
+                // Fallback for testing without camera
+                gameActive = true;
+                initializeGame();
+            }
+        }
+        
+        function initializeGame() {
+            spawnInitialCoins();
+            startCoinSpawner();
+            startCollectionCheck();
+            updateProgressBar();
+        }
+        
+        function spawnInitialCoins() {
+            for (let i = 0; i < 10; i++) {
+                spawnCoin();
+            }
+        }
+        
+        function spawnCoin() {
+            if (coins.length >= MAX_COINS) return;
+            
+            const container = document.getElementById('coins-container');
+            const coinType = getRandomCoinType();
+            const config = COIN_TYPES[coinType];
+            
+            const coin = document.createElement('a-entity');
+            const coinId = 'coin-' + Date.now() + '-' + Math.random();
+            
+            // Random position around the player
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 1 + Math.random() * COIN_SPAWN_RADIUS;
+            const x = Math.cos(angle) * distance;
+            const z = Math.sin(angle) * distance;
+            const y = 0.5 + Math.random() * 0.5;
+            
+            coin.setAttribute('id', coinId);
+            coin.setAttribute('position', `${x} ${y} ${z}`);
+            coin.setAttribute('class', 'collectible');
+            coin.setAttribute('data-value', config.value);
+            coin.setAttribute('data-type', coinType);
+            
+            // Create coin geometry based on type
+            if (coinType === 'diamond') {
+                // Diamond shape
+                coin.innerHTML = `
+                    <a-dodecahedron 
+                        color="${config.color}" 
+                        scale="${config.scale}"
+                        animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
+                    </a-dodecahedron>
+                    <a-ring
+                        color="#ffffff"
+                        radius-inner="0.6"
+                        radius-outer="0.7"
+                        rotation="-90 0 0"
+                        opacity="0.5"
+                        scale="${config.scale}">
+                    </a-ring>
+                `;
+            } else {
+                // Coin shape (cylinder)
+                coin.innerHTML = `
+                    <a-cylinder 
+                        color="${config.color}" 
+                        scale="${config.scale}"
+                        height="0.05"
+                        animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
+                    </a-cylinder>
+                    <a-ring
+                        color="#ffffff"
+                        radius-inner="0.6"
+                        radius-outer="0.7"
+                        rotation="0 0 0"
+                        opacity="0.3"
+                        scale="${config.scale}">
+                    </a-ring>
+                `;
+            }
+            
+            // Floating animation
+            coin.setAttribute('animation__float', {
+                property: 'position',
+                to: `${x} ${y + 0.2} ${z}`,
+                dir: 'alternate',
+                dur: 1000 + Math.random() * 500,
+                loop: true,
+                easing: 'easeInOutSine'
+            });
+            
+            container.appendChild(coin);
+            coins.push({ id: coinId, element: coin, value: config.value, type: coinType, x, y, z });
+        }
+        
+        function getRandomCoinType() {
+            const rand = Math.random();
+            let cumulative = 0;
+            
+            for (const [type, config] of Object.entries(COIN_TYPES)) {
+                cumulative += config.chance;
+                if (rand <= cumulative) return type;
+            }
+            return 'regular';
+        }
+        
+        function startCoinSpawner() {
+            setInterval(() => {
+                if (gameActive && coins.length < MAX_COINS) {
+                    spawnCoin();
+                }
+            }, 2000);
+        }
+        
+        function startCollectionCheck() {
+            // Check for collection every 100ms
+            setInterval(() => {
+                if (!gameActive) return;
+                checkCollection();
+            }, 100);
+            
+            // Also check on click/tap
+            document.addEventListener('click', checkCollection);
+            document.addEventListener('touchstart', checkCollection);
+        }
+        
+        function checkCollection() {
+            const camera = document.querySelector('[camera]');
+            if (!camera) return;
+            
+            const cameraPos = camera.getAttribute('position');
+            const collectionDistance = 1.5;
+            
+            coins.forEach((coin, index) => {
+                if (collectedCoins.has(coin.id)) return;
+                
+                const dx = cameraPos.x - coin.x;
+                const dz = cameraPos.z - coin.z;
+                const dy = cameraPos.y - coin.y;
+                const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                
+                if (distance < collectionDistance) {
+                    collectCoin(coin, index);
+                }
+            });
+        }
+        
+        function collectCoin(coin, index) {
+            collectedCoins.add(coin.id);
+            score += coin.value;
+            
+            // Create collection effect
+            createCollectionEffect(coin.x, coin.y, coin.z, coin.type);
+            
+            // Remove coin with animation
+            coin.element.setAttribute('animation__collect', {
+                property: 'scale',
+                to: '0 0 0',
+                dur: 300,
+                easing: 'easeInBack'
+            });
+            
+            setTimeout(() => {
+                coin.element.remove();
+                coins.splice(index, 1);
+            }, 300);
+            
+            // Update UI
+            updateScore();
+            updateProgressBar();
+            
+            // Check for level completion
+            if (score >= TARGET_SCORE * level) {
+                levelComplete();
+            }
+        }
+        
+        function createCollectionEffect(x, y, z, type) {
+            const container = document.getElementById('particles-container');
+            const colors = {
+                regular: '#FFD700',
+                golden: '#FFA500',
+                diamond: '#00D4FF'
+            };
+            
+            // Create particle burst
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('a-sphere');
+                particle.setAttribute('position', `${x} ${y} ${z}`);
+                particle.setAttribute('radius', '0.05');
+                particle.setAttribute('color', colors[type] || '#FFD700');
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const speed = 2;
+                const vx = Math.cos(angle) * speed;
+                const vz = Math.sin(angle) * speed;
+                
+                particle.setAttribute('animation', {
+                    property: 'position',
+                    to: `${x + vx} ${y + 1} ${z + vz}`,
+                    dur: 800,
+                    easing: 'easeOutQuad'
+                });
+                
+                particle.setAttribute('animation__fade', {
+                    property: 'scale',
+                    to: '0 0 0',
+                    dur: 800,
+                    easing: 'easeInQuad'
+                });
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 800);
+            }
+            
+            // Show floating text
+            showFloatingText(`+${COIN_TYPES[type].value}`, x, y + 0.5, z);
+        }
+        
+        function showFloatingText(text, x, y, z) {
+            const container = document.getElementById('particles-container');
+            const textEl = document.createElement('a-text');
+            textEl.setAttribute('value', text);
+            textEl.setAttribute('position', `${x} ${y} ${z}`);
+            textEl.setAttribute('align', 'center');
+            textEl.setAttribute('color', '#FFD700');
+            textEl.setAttribute('scale', '2 2 2');
+            textEl.setAttribute('side', 'double');
+            
+            textEl.setAttribute('animation', {
+                property: 'position',
+                to: `${x} ${y + 1} ${z}`,
+                dur: 1000,
+                easing: 'easeOutQuad'
+            });
+            
+            textEl.setAttribute('animation__fade', {
+                property: 'opacity',
+                from: 1,
+                to: 0,
+                dur: 1000,
+                easing: 'easeInQuad'
+            });
+            
+            container.appendChild(textEl);
+            setTimeout(() => textEl.remove(), 1000);
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+        
+        function updateProgressBar() {
+            const progress = Math.min((score / (TARGET_SCORE * level)) * 100, 100);
+            document.getElementById('progress').style.width = progress + '%';
+        }
+        
+        function levelComplete() {
+            gameActive = false;
+            document.getElementById('congratulations-screen').style.display = 'flex';
+            document.getElementById('level-score').textContent = `Total Score: ${score}`;
+        }
+        
+        function nextLevel() {
+            level++;
+            document.getElementById('level').textContent = level;
+            document.getElementById('congratulations-screen').style.display = 'none';
+            
+            // Clear existing coins
+            document.getElementById('coins-container').innerHTML = '';
+            coins = [];
+            collectedCoins.clear();
+            
+            gameActive = true;
+            spawnInitialCoins();
+            updateProgressBar();
+        }
+        
+        // Handle visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Pause when tab not visible
+            } else {
+                // Resume when tab visible
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "openclaw_frame_0": {
+    "frame_id": "frame1.jpg",
+    "video_name": "openclaw_intro",
+    "timestamp": 0.0,
+    "path": "/tmp/video-frames/frame1.jpg"
+  },
+  "openclaw_frame_1": {
+    "frame_id": "frame2.jpg",
+    "video_name": "openclaw_intro",
+    "timestamp": 1.0,
+    "path": "/tmp/video-frames/frame2.jpg"
+  },
+  "openclaw_frame_2": {
+    "frame_id": "frame3.jpg",
+    "video_name": "openclaw_intro",
+    "timestamp": 2.0,
+    "path": "/tmp/video-frames/frame3.jpg"
+  },
+  "openclaw_frame_3": {
+    "frame_id": "frame4.jpg",
+    "video_name": "openclaw_intro",
+    "timestamp": 3.0,
+    "path": "/tmp/video-frames/frame4.jpg"
+  },
+  "openclaw_frame_4": {
+    "frame_id": "frame5.jpg",
+    "video_name": "openclaw_intro",
+    "timestamp": 4.0,
+    "path": "/tmp/video-frames/frame5.jpg"
+  }
+}
