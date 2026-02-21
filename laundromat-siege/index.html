@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundromat Siege - Suds & Scum Defense</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+        #game-container {
+            border: 4px solid #e94560;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+        #loading {
+            position: absolute;
+            color: #e94560;
+            font-size: 24px;
+            text-align: center;
+        }
+        .bubble {
+            display: inline-block;
+            animation: float 2s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <span class="bubble">🫧</span> Loading Laundromat Siege... <span class="bubble">🫧</span>
+    </div>
+    <div id="game-container"></div>
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

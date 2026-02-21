@@ -1,0 +1,59 @@
+{
+  "name": "laundromat-siege",
+  "version": "0.1.0",
+  "description": "Laundromat Siege - Suds & Scum Defense",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "package": "electron-builder"
+  },
+  "keywords": ["tower-defense", "phaser", "steam"],
+  "author": "Vibe Coding Maker",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.80.1",
+    "vite": "^5.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "vite-plugin-electron": "^0.28.4"
+  },
+  "build": {
+    "appId": "com.vibecodingmaker.laundromatsiege",
+    "productName": "Laundromat Siege",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}

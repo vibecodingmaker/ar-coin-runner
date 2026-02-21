@@ -1,0 +1,3 @@
+[build]
+  publish = "laundromat-siege/dist"
+  command = "npm run build"
